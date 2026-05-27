@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск утерянных кодов маркировки Честный знак</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #fff9c4 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid;
+        }
+
+        .input-card.chz { border-color: #64b5f6; }
+        .input-card.sold { border-color: #ffd54f; }
+        .input-card.stock { border-color: #4db6ac; }
+        .input-card.lost { border-color: #ffb74d; }
+
+        .input-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .input-card textarea {
+            width: 100%;
+            height: 200px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .input-card textarea:focus {
+            outline: none;
+            border-color: #64b5f6;
+        }
+
+        .input-card .hint {
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 14px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 0 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #64b5f6, #42a5f5);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #42a5f5, #2196f3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ffd54f, #ffca28);
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #ffca28, #ffb300);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+        }
+
+        .results-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #e3f2fd, #fff9c4);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1976d2;
+        }
+
+        .stat-card .label {
+            color: #555;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .lost-codes-container {
+            background: #fff3e0;
+            border: 2px solid #ffb74d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .lost-codes-container h3 {
+            color: #e65100;
+            margin-bottom: 15px;
+        }
+
+        .lost-codes-list {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .lost-code-item {
+            padding: 5px 10px;
+            border-bottom: 1px solid #eee;
+            word-break: break-all;
+        }
+
+        .lost-code-item:last-child {
+            border-bottom: none;
+        }
+
+        .no-lost {
+            color: #4caf50;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #64b5f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Поиск утерянных кодов маркировки</h1>
+        <p class="subtitle">Честный знак - Анализ расхождений между системами</p>
+
+        <div class="input-grid">
+            <div class="input-card chz">
+                <h3>📦 Поступило по ЧЗ</h3>
+                <textarea id="chzCodes" placeholder="Вставьте коды из системы Честный знак&#10;Каждый код с новой строки"></textarea>
+                <p class="hint">Пример: 0104607049381112215!w4Mw,fE7&gt;SR</p>
+            </div>
+
+            <div class="input-card sold">
+                <h3>💰 Продано + реализация</h3>
+                <textarea id="soldCodes" placeholder="Вставьте коды из 1С&#10;Каждый код с новой строки"></textarea>
+                <p class="hint">Пример: (01)04607049381112(21)5n9H4&lt;dqOlI0a</p>
+            </div>
+
+            <div class="input-card stock">
+                <h3>📋 В Наличии</h3>
+                <textarea id="stockCodes" placeholder="Вставьте отсканированные коды&#10;Каждый код с новой строки"></textarea>
+                <p class="hint">Пример: 0104607049381112215HyX)ezPPMoZB91EE1192P5W8u6p1gPp7f6OGXs7PmpS+mcIFnlVHBOyreKRJ7MM=</p>
+            </div>
+
+            <div class="input-card lost">
+                <h3>⚠️ Потеряхи</h3>
+                <textarea id="lostCodes" readonly placeholder="Здесь появятся найденные потерянные коды"></textarea>
+                <p class="hint">Разница между поступившими и проданными маркировками</p>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button class="btn btn-primary" onclick="findLostCodes()">🔍 Найти потеряхи</button>
+            <button class="btn btn-secondary" onclick="clearAll()">🗑️ Очистить всё</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Обработка данных...</p>
+        </div>
+
+        <div class="results-section" id="results">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="number" id="chzCount">0</div>
+                    <div class="label">Поступило по ЧЗ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="soldCount">0</div>
+                    <div class="label">Продано</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="stockCount">0</div>
+                    <div class="label">В наличии</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="lostCount">0</div>
+                    <div class="label">Потеряхи</div>
+                </div>
+            </div>
+
+            <div class="lost-codes-container">
+                <h3>📝 Список потерянных кодов:</h3>
+                <div class="lost-codes-list" id="lostCodesList">
+                    <p class="no-lost">Нажмите "Найти потеряхи" для анализа</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Автоматическая нормализация при вставке
+        document.querySelectorAll('textarea').forEach(textarea => {
+            textarea.addEventListener('paste', function(e) {
+                setTimeout(() => {
+                    normalizeField(this.id);
+                }, 100);
+            });
+        });
+
+        async function normalizeField(fieldId) {
+            const textarea = document.getElementById(fieldId);
+            const codes = textarea.value;
+            
+            if (!codes.trim()) return;
+
+            let field = '';
+            if (fieldId === 'chzCodes') field = 'chz';
+            else if (fieldId === 'soldCodes') field = 'sold';
+            else if (fieldId === 'stockCodes') field = 'stock';
+
+            try {
+                const response = await fetch('/normalize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ field, codes })
+                });
+
+                const data = await response.json();
+                textarea.value = data.normalized;
+            } catch (error) {
+                console.error('Ошибка нормализации:', error);
+            }
+        }
+
+        async function findLostCodes() {
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+
+            loading.classList.add('active');
+            results.classList.remove('active');
+
+            const chz = document.getElementById('chzCodes').value;
+            const sold = document.getElementById('soldCodes').value;
+            const stock = document.getElementById('stockCodes').value;
+
+            try {
+                const response = await fetch('/find', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ chz, sold, stock })
+                });
+
+                const data = await response.json();
+
+                document.getElementById('chzCount').textContent = data.chz_count;
+                document.getElementById('soldCount').textContent = data.sold_count;
+                document.getElementById('stockCount').textContent = data.stock_count;
+                document.getElementById('lostCount').textContent = data.lost_count;
+
+                const lostCodesList = document.getElementById('lostCodesList');
+                
+                if (data.lost_codes.length === 0) {
+                    lostCodesList.innerHTML = '<p class="no-lost">✅ Потерянных кодов не найдено!</p>';
+                } else {
+                    lostCodesList.innerHTML = data.lost_codes.map(code => 
+                        `<div class="lost-code-item">${code}</div>`
+                    ).join('');
+                }
+
+                document.getElementById('lostCodes').value = data.lost_codes.join('\n');
+                results.classList.add('active');
+            } catch (error) {
+                alert('Ошибка при обработке данных: ' + error.message);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('chzCodes').value = '';
+            document.getElementById('soldCodes').value = '';
+            document.getElementById('stockCodes').value = '';
+            document.getElementById('lostCodes').value = '';
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('chzCount').textContent = '0';
+            document.getElementById('soldCount').textContent = '0';
+            document.getElementById('stockCount').textContent = '0';
+            document.getElementById('lostCount').textContent = '0';
+        }
+    </script>
+</body>
+</html>
